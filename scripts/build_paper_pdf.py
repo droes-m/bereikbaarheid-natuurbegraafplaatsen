@@ -161,6 +161,8 @@ def markdown_to_html_body(md_text: str, base_dir: Path) -> str:
             out.append(f'<p class="paper-subtitle">{_inline_md(para_text)}</p>')
         elif len(out) == 2 and out[1].startswith('<p class="paper-subtitle">'):
             out.append(f'<p class="paper-meta">{_inline_md(para_text)}</p>')
+        elif para_text.startswith("**Tabel "):
+            out.append(f'<p class="table-caption">{_inline_md(para_text)}</p>')
         else:
             out.append(f"<p>{_inline_md(para_text)}</p>")
 
@@ -225,6 +227,14 @@ def build_pdf(md_path: Path, pdf_path: Path) -> None:
       font-size: 8.8pt;
       color: #627d98;
       margin: 0 0 12pt 0;
+    }}
+    p.table-caption {{
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-size: 9pt;
+      color: #243b53;
+      margin: 10pt 0 4pt 0;
+      page-break-after: avoid;
+      break-after: avoid;
     }}
     h2 {{
       font-size: 13pt;

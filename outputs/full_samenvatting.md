@@ -19,6 +19,11 @@
 | Aandeel binnen 45 min (%) | 78.08% |
 | Gewogen gemiddelde rijafstand (km) | 34.64 |
 | Gewogen mediaan rijafstand (km) | 21.57 |
+| P90 rijafstand (km) | 87.77 |
+| Aandeel binnen 10 km (%) | 18.85% |
+| Aandeel binnen 20 km (%) | 46.20% |
+| Aandeel binnen 30 km (%) | 64.32% |
+| Aandeel binnen 50 km (%) | 76.98% |
 
 ## Gevoeligheidsanalyse: busnummervariant
 

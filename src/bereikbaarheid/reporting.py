@@ -54,6 +54,11 @@ def write_summary_tables(
 | Aandeel binnen 45 min (%) | {f['pct_within_45_min']:.2f}% |
 | Gewogen gemiddelde rijafstand (km) | {f['mean_distance_km']:.2f} |
 | Gewogen mediaan rijafstand (km) | {f['median_distance_km']:.2f} |
+| P90 rijafstand (km) | {f['p90_distance_km']:.2f} |
+| Aandeel binnen 10 km (%) | {f['pct_within_10_km']:.2f}% |
+| Aandeel binnen 20 km (%) | {f['pct_within_20_km']:.2f}% |
+| Aandeel binnen 30 km (%) | {f['pct_within_30_km']:.2f}% |
+| Aandeel binnen 50 km (%) | {f['pct_within_50_km']:.2f}% |
 
 ## Gevoeligheidsanalyse: busnummervariant
 

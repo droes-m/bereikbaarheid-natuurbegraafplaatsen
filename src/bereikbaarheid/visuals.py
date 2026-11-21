@@ -31,6 +31,10 @@ DURATION_BINS = [0, 15, 25, 35, 45, 60, 120]
 DURATION_LABELS = ["≤ 15 min", "15–25 min", "25–35 min", "35–45 min", "45–60 min", "> 60 min"]
 DURATION_COLORS = ["#1a9850", "#91cf60", "#d9ef8b", "#fee08b", "#fc8d59", "#d73027"]
 
+DISTANCE_BINS = [0, 10, 20, 30, 50, 80, 200]
+DISTANCE_LABELS = ["≤ 10 km", "10–20 km", "20–30 km", "30–50 km", "50–80 km", "> 80 km"]
+DISTANCE_COLORS = ["#1a9850", "#91cf60", "#d9ef8b", "#fee08b", "#fc8d59", "#d73027"]
+
 
 def _short_dest_name(name: str) -> str:
     return name.replace("Natuurbegraafplek ", "").strip()
@@ -448,6 +452,11 @@ def render_interactive_html_map(
         "pct_within_45_min",
         "mean_distance_km",
         "median_distance_km",
+        "p90_distance_km",
+        "pct_within_10_km",
+        "pct_within_20_km",
+        "pct_within_30_km",
+        "pct_within_50_km",
         "top_destination_id",
         "top_destination_name",
         "geometry",
@@ -520,6 +529,8 @@ def render_interactive_html_map(
         <option value="p90_duration_min">P90 autorijtijd (min)</option>
         <option value="pct_within_30_min">Aandeel binnen 30 minuten (%)</option>
         <option value="median_distance_km">Mediaan rijafstand (km)</option>
+        <option value="p90_distance_km">P90 rijafstand (km)</option>
+        <option value="pct_within_30_km">Aandeel binnen 30 km (%)</option>
       </select>
     </label>
     <label><strong>Markeer gemeenten met mediaan &gt; <span id="threshVal">0</span> min:</strong>
@@ -561,8 +572,8 @@ def render_interactive_html_map(
       return v <= 10 ? '#1a9850' :
              v <= 20 ? '#91cf60' :
              v <= 30 ? '#d9ef8b' :
-             v <= 45 ? '#fee08b' :
-             v <= 60 ? '#fc8d59' : '#d73027';
+             v <= 50 ? '#fee08b' :
+             v <= 80 ? '#fc8d59' : '#d73027';
     }}
 
     let currentMetric = 'median_duration_min';
@@ -572,8 +583,8 @@ def render_interactive_html_map(
       const p = f.properties;
       const val = p[currentMetric];
       let fill = '#dddddd';
-      if (currentMetric === 'pct_within_30_min') fill = pctColor(val);
-      else if (currentMetric === 'median_distance_km') fill = distColor(val);
+      if (currentMetric === 'pct_within_30_min' || currentMetric === 'pct_within_30_km') fill = pctColor(val);
+      else if (currentMetric === 'median_distance_km' || currentMetric === 'p90_distance_km') fill = distColor(val);
       else fill = durationColor(val);
 
       const dimmed = threshold > 0 && (p.median_duration_min == null || p.median_duration_min <= threshold);
@@ -602,7 +613,8 @@ def render_interactive_html_map(
           Gemiddelde autorijtijd: <b>${{fmt(p.mean_duration_min, ' min')}}</b><br/>
           P90 autorijtijd: <b>${{fmt(p.p90_duration_min, ' min')}}</b><br/>
           Binnen 15 / 30 / 45 min: <b>${{fmt(p.pct_within_15_min, '%')}} / ${{fmt(p.pct_within_30_min, '%')}} / ${{fmt(p.pct_within_45_min, '%')}}</b><br/>
-          Mediaan rijafstand: <b>${{fmt(p.median_distance_km, ' km')}}</b><br/>
+          Mediaan / P90 rijafstand: <b>${{fmt(p.median_distance_km, ' km')}} / ${{fmt(p.p90_distance_km, ' km')}}</b><br/>
+          Binnen 10 / 20 / 30 / 50 km: <b>${{fmt(p.pct_within_10_km, '%')}} / ${{fmt(p.pct_within_20_km, '%')}} / ${{fmt(p.pct_within_30_km, '%')}} / ${{fmt(p.pct_within_50_km, '%')}}</b><br/>
           Routedekking: <b>${{fmt(p.routing_coverage_pct, '%')}}</b><br/>
           Snelste locatie: <b>${{p.top_destination_name || 'n.v.t.'}}</b>
         `;
@@ -629,10 +641,10 @@ def render_interactive_html_map(
     }};
     legend.update = function() {{
       let items;
-      if (currentMetric === 'pct_within_30_min') {{
+      if (currentMetric === 'pct_within_30_min' || currentMetric === 'pct_within_30_km') {{
         items = [['#1a9850','≥ 90%'],['#91cf60','70–90%'],['#d9ef8b','50–70%'],['#fee08b','25–50%'],['#fc8d59','1–25%'],['#d73027','0%']];
-      }} else if (currentMetric === 'median_distance_km') {{
-        items = [['#1a9850','≤ 10 km'],['#91cf60','10–20 km'],['#d9ef8b','20–30 km'],['#fee08b','30–45 km'],['#fc8d59','45–60 km'],['#d73027','> 60 km']];
+      }} else if (currentMetric === 'median_distance_km' || currentMetric === 'p90_distance_km') {{
+        items = [['#1a9850','≤ 10 km'],['#91cf60','10–20 km'],['#d9ef8b','20–30 km'],['#fee08b','30–50 km'],['#fc8d59','50–80 km'],['#d73027','> 80 km']];
       }} else {{
         items = [['#1a9850','≤ 15 min'],['#91cf60','15–25 min'],['#d9ef8b','25–35 min'],['#fee08b','35–45 min'],['#fc8d59','45–60 min'],['#d73027','> 60 min']];
       }}
@@ -656,4 +668,290 @@ def render_interactive_html_map(
 """
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")
+    return output_path
+
+
+def render_distance_maps(
+    municipalities_df: pd.DataFrame,
+    boundaries_gdf: gpd.GeoDataFrame,
+    destinations_df: pd.DataFrame,
+    output_dir: Path,
+    provinces_gdf: gpd.GeoDataFrame | None = None,
+    nis_col: str = "NISCODE",
+    prefix: str = "",
+) -> Path:
+    """Render side-by-side median & P90 driving distance (km) choropleth map."""
+    _style_axes()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    p = f"{prefix}_" if prefix else ""
+
+    b = boundaries_gdf.copy()
+    b["nis_key"] = b[nis_col].astype(str).str.strip()
+    m = municipalities_df.copy()
+    m["nis_key"] = m["nis_code"].astype(str).str.strip()
+    merged = b.merge(m, on="nis_key", how="left")
+
+    dest_gdf = gpd.GeoDataFrame(
+        destinations_df.copy(),
+        geometry=gpd.points_from_xy(destinations_df["lon"], destinations_df["lat"]),
+        crs="EPSG:4326",
+    ).to_crs(merged.crs)
+    prov_proj = provinces_gdf.to_crs(merged.crs) if provinces_gdf is not None else None
+
+    cmap = mcolors.ListedColormap(DISTANCE_COLORS)
+    norm = mcolors.BoundaryNorm(DISTANCE_BINS, cmap.N)
+
+    fig, axes = plt.subplots(1, 2, figsize=(18, 6.8), dpi=220)
+    panels = [
+        (axes[0], "median_distance_km", "Mediaan rijafstand (km)"),
+        (axes[1], "p90_distance_km", "P90 rijafstand (km)"),
+    ]
+    for ax, col, subtitle in panels:
+        merged.plot(
+            column=col,
+            ax=ax,
+            cmap=cmap,
+            norm=norm,
+            edgecolor="#ffffff",
+            linewidth=0.35,
+            missing_kwds={"color": "#dddddd"},
+        )
+        if prov_proj is not None:
+            prov_proj.boundary.plot(ax=ax, edgecolor="#333333", linewidth=1.0, zorder=3)
+        dest_gdf.plot(
+            ax=ax,
+            color="#0b3d2e",
+            edgecolor="white",
+            linewidth=0.9,
+            markersize=48,
+            marker="o",
+            zorder=5,
+        )
+        ax.set_title(subtitle, fontsize=13, fontweight="bold", pad=8)
+        ax.set_axis_off()
+
+    legend_handles = [
+        mpatches.Patch(facecolor=c, edgecolor="#888888", label=lbl)
+        for c, lbl in zip(DISTANCE_COLORS, DISTANCE_LABELS, strict=True)
+    ]
+    legend_handles.append(
+        plt.Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            markerfacecolor="#0b3d2e",
+            markeredgecolor="white",
+            markersize=8,
+            label=f"Natuurbegraafplek (ANB, n={len(destinations_df)})",
+        )
+    )
+    fig.legend(
+        handles=legend_handles,
+        loc="lower center",
+        ncol=len(legend_handles),
+        frameon=True,
+        facecolor="white",
+        edgecolor="#dddddd",
+        fontsize=9.5,
+        bbox_to_anchor=(0.5, 0.06),
+    )
+    fig.suptitle(
+        "Rijafstand (km) van de snelste autoroute naar de dichtstbijzijnde natuurbegraafplaats in Vlaanderen",
+        fontsize=15,
+        fontweight="bold",
+        y=0.98,
+    )
+    fig.text(0.5, 0.012, FOOTER_NOTE, ha="center", fontsize=8.5, color="#555555")
+    plt.tight_layout(rect=[0, 0.11, 1, 0.94])
+
+    out_path = output_dir / f"{p}kaart_afstand_mediaan_en_p90_km.png"
+    fig.savefig(out_path, bbox_inches="tight")
+    plt.close(fig)
+    return out_path
+
+
+def render_cdf_curve_km(
+    address_origin_map: pd.DataFrame,
+    origin_results: pd.DataFrame,
+    output_path: Path,
+) -> Path:
+    """Weighted cumulative accessibility curve in kilometers for Flanders and each province."""
+    _style_axes()
+    subset = address_origin_map.loc[address_origin_map["in_main_analysis"]]
+    weights = (
+        subset.groupby(["nis_code", "origin_id"], dropna=False)
+        .size()
+        .reset_index(name="weight")
+    )
+    merged = weights.merge(
+        origin_results[["origin_id", "status", "distance_m"]],
+        on="origin_id",
+        how="left",
+    )
+    ok = merged.loc[merged["status"] == "ok"].copy()
+    ok["dist_km"] = ok["distance_m"] / 1000.0
+    ok = ok.loc[np.isfinite(ok["dist_km"])].copy()
+    ok["provincie"] = ok["nis_code"].map(province_from_nis)
+
+    grid = np.linspace(0, 140, 561)
+    fig, ax = plt.subplots(figsize=(11, 6.2), dpi=220)
+
+    def _plot_curve(df: pd.DataFrame, label: str, color: str, lw: float, zorder: int) -> None:
+        if len(df) == 0:
+            return
+        d = df["dist_km"].to_numpy(dtype=np.float64)
+        w = df["weight"].to_numpy(dtype=np.float64)
+        order = np.argsort(d)
+        d_s = d[order]
+        cum = np.cumsum(w[order]) / np.sum(w) * 100.0
+        y = np.interp(grid, d_s, cum, left=0.0, right=100.0)
+        ax.plot(grid, y, label=label, color=color, linewidth=lw, zorder=zorder)
+
+    for prov, color in PROVINCE_COLORS.items():
+        sub_p = ok.loc[ok["provincie"] == prov]
+        if len(sub_p) > 0:
+            pct30 = 100.0 * sub_p.loc[sub_p["dist_km"] <= 30.0, "weight"].sum() / sub_p["weight"].sum()
+            _plot_curve(sub_p, f"{prov} ({pct30:.0f}% ≤ 30 km)", color, lw=2.0, zorder=3)
+
+    pct30_fl = 100.0 * ok.loc[ok["dist_km"] <= 30.0, "weight"].sum() / ok["weight"].sum()
+    _plot_curve(ok, f"Vlaams Gewest ({pct30_fl:.0f}% ≤ 30 km)", "#111111", lw=3.2, zorder=5)
+
+    for thresh, dy in ((10, -7), (20, -7), (30, -7), (50, -7)):
+        ax.axvline(thresh, color="#888888", linestyle="--", linewidth=0.9, zorder=1)
+        pct_t = 100.0 * ok.loc[ok["dist_km"] <= thresh, "weight"].sum() / ok["weight"].sum()
+        ax.scatter([thresh], [pct_t], color="#111111", s=35, zorder=6)
+        ax.annotate(
+            f"{thresh} km: {pct_t:.1f}%",
+            xy=(thresh, pct_t),
+            xytext=(thresh + 2.0, max(pct_t + dy, 4)),
+            fontsize=8.8,
+            fontweight="bold",
+            color="#111111",
+            bbox={"boxstyle": "round,pad=0.25", "facecolor": "white", "edgecolor": "#cccccc", "alpha": 0.9},
+        )
+
+    ax.set_xlim(0, 140)
+    ax.set_ylim(0, 102)
+    ax.set_xlabel("Rijafstand van de snelste autoroute naar een natuurbegraafplaats (km)", fontsize=11)
+    ax.set_ylabel("Cumulatief aandeel vermoedelijke woonadressen (%)", fontsize=11)
+    ax.set_title(
+        "Cumulatieve bereikbaarheid in kilometers in Vlaanderen en per provincie",
+        fontsize=13,
+        fontweight="bold",
+        pad=12,
+    )
+    ax.grid(True, linestyle=":", alpha=0.5)
+    ax.legend(loc="lower right", frameon=True, facecolor="white", fontsize=9.5)
+    fig.text(0.01, -0.02, FOOTER_NOTE, fontsize=8, color="#555555")
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, bbox_inches="tight")
+    plt.close(fig)
+    return output_path
+
+
+def render_destination_catchment_chart_km(
+    dest_summary: pd.DataFrame,
+    output_path: Path,
+) -> Path:
+    """Horizontal bar chart of residential addresses per ANB site labeled with median km."""
+    _style_axes()
+    df = dest_summary.sort_values("n_addresses_fastest", ascending=True).copy()
+    df["short_name"] = df["name"].map(_short_dest_name)
+
+    fig, ax = plt.subplots(figsize=(11, 7.2), dpi=220)
+    bars = ax.barh(df["short_name"], df["n_addresses_fastest"], color="#2b7a5b", edgecolor="none")
+
+    max_v = max(float(df["n_addresses_fastest"].max()), 1.0)
+    for bar, (_, row) in zip(bars, df.iterrows(), strict=True):
+        val = int(row["n_addresses_fastest"])
+        pct = float(row["share_of_valid_pct"])
+        med = row["median_distance_km"]
+        val_str = f"{val:,}".replace(",", ".")
+        pct_str = f"{pct:.1f}%".replace(".", ",")
+        med_str = f" · mediaan {med:.1f} km".replace(".", ",") if np.isfinite(med) else ""
+        ax.text(
+            val + max_v * 0.012,
+            bar.get_y() + bar.get_height() / 2,
+            f"{val_str} ({pct_str}{med_str})",
+            va="center",
+            fontsize=8.5,
+            color="#222222",
+        )
+
+    ax.set_xlim(0, max_v * 1.48)
+    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}".replace(",", ".")))
+    ax.set_xlabel("Aantal vermoedelijke woonadressen waarvoor deze locatie het snelst bereikbaar is", fontsize=10.5)
+    ax.set_title(
+        "Verzorgingsbereik per natuurbegraafplaats in Vlaanderen (met mediaan rijafstand in km)",
+        fontsize=13,
+        fontweight="bold",
+        pad=12,
+    )
+    ax.grid(axis="x", linestyle=":", alpha=0.5)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    fig.text(0.01, -0.02, FOOTER_NOTE, fontsize=8, color="#555555")
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, bbox_inches="tight")
+    plt.close(fig)
+    return output_path
+
+
+def render_extremes_and_provinces_chart_km(
+    municipalities_df: pd.DataFrame,
+    provinces_df: pd.DataFrame,
+    output_path: Path,
+    top_n: int = 12,
+) -> Path:
+    """Dumbbell chart showing median -> P90 in km for provinces and top/bottom municipalities."""
+    _style_axes()
+    valid_m = municipalities_df.dropna(subset=["median_distance_km", "p90_distance_km"]).copy()
+    best = valid_m.nsmallest(top_n, "median_distance_km").sort_values("median_distance_km", ascending=False)
+    worst = valid_m.nlargest(top_n, "median_distance_km").sort_values("median_distance_km", ascending=True)
+    prov = provinces_df.dropna(subset=["median_distance_km"]).sort_values("median_distance_km", ascending=False)
+
+    fig, axes = plt.subplots(1, 3, figsize=(17.5, 6.2), dpi=220, sharex=True)
+    panels = [
+        (axes[0], prov, "provincie", "Per provincie"),
+        (axes[1], best, "gemeente", f"Top {len(best)} dichtstbijzijnde gemeenten"),
+        (axes[2], worst, "gemeente", f"Top {len(worst)} verst gelegen gemeenten"),
+    ]
+
+    for ax, df, label_col, title in panels:
+        y = np.arange(len(df))
+        ax.hlines(
+            y,
+            df["median_distance_km"],
+            df["p90_distance_km"],
+            color="#999999",
+            linewidth=2.2,
+            zorder=2,
+        )
+        ax.scatter(df["median_distance_km"], y, color="#1b9e77", s=65, zorder=3, label="Mediaan (km)")
+        ax.scatter(df["p90_distance_km"], y, color="#d95f02", s=65, zorder=3, label="P90 (km)")
+        ax.set_yticks(y)
+        ax.set_yticklabels(df[label_col], fontsize=9.5)
+        ax.axvline(30, color="#666666", linestyle="--", linewidth=0.8, alpha=0.7)
+        ax.set_title(title, fontsize=11.5, fontweight="bold", pad=8)
+        ax.set_xlabel("Rijafstand (km)")
+        ax.grid(axis="x", linestyle=":", alpha=0.5)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+
+    axes[0].legend(loc="upper right", frameon=True, facecolor="white", fontsize=9)
+    fig.suptitle(
+        "Spreiding van rijafstand (mediaan → P90 in km) naar de snelst bereikbare natuurbegraafplaats",
+        fontsize=14,
+        fontweight="bold",
+        y=0.99,
+    )
+    fig.text(0.5, -0.01, FOOTER_NOTE, ha="center", fontsize=8.5, color="#555555")
+    plt.tight_layout(rect=[0, 0.03, 1, 0.94])
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, bbox_inches="tight")
+    plt.close(fig)
     return output_path

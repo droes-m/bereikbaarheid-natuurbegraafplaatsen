@@ -26,8 +26,12 @@ from bereikbaarheid.routing import route_origins_osrm
 from bereikbaarheid.sampling import stratified_pilot_sample
 from bereikbaarheid.visuals import (
     render_cdf_curve,
+    render_cdf_curve_km,
     render_destination_catchment_chart,
+    render_destination_catchment_chart_km,
+    render_distance_maps,
     render_extremes_and_provinces_chart,
+    render_extremes_and_provinces_chart_km,
     render_interactive_html_map,
     render_travel_time_maps,
 )
@@ -129,25 +133,46 @@ def _generate_all_outputs(
     prov_main.to_csv(output_dir / f"{p}provincies_samenvatting.csv", index=False)
     dest_summary.to_csv(output_dir / f"{p}bestemmingen_verzorgingsgebied.csv", index=False)
 
-    # Static charts (always possible even without boundaries)
+    # Static charts (tijd én afstand in km)
     cdf_path = render_cdf_curve(addr_origin_map, results, output_dir / f"{p}grafiek_cumulatieve_bereikbaarheid.png")
+    cdf_km_path = render_cdf_curve_km(
+        addr_origin_map, results, output_dir / f"{p}grafiek_cumulatieve_bereikbaarheid_km.png"
+    )
     dest_chart = render_destination_catchment_chart(
         dest_summary, output_dir / f"{p}grafiek_verzorgingsbereik_per_locatie.png"
     )
+    dest_chart_km = render_destination_catchment_chart_km(
+        dest_summary, output_dir / f"{p}grafiek_verzorgingsbereik_per_locatie_km.png"
+    )
     ext_chart = render_extremes_and_provinces_chart(
         mun_main, prov_main, output_dir / f"{p}grafiek_provincies_en_gemeenten_spreiding.png"
+    )
+    ext_chart_km = render_extremes_and_provinces_chart_km(
+        mun_main, prov_main, output_dir / f"{p}grafiek_provincies_en_gemeenten_spreiding_km.png"
     )
     print("Tabellen & grafieken geschreven:")
     for k, v in written.items():
         print(f"  - {k}: {v}")
     print(f"  - cdf: {cdf_path}")
+    print(f"  - cdf_km: {cdf_km_path}")
     print(f"  - catchment_chart: {dest_chart}")
+    print(f"  - catchment_chart_km: {dest_chart_km}")
     print(f"  - extremes_chart: {ext_chart}")
+    print(f"  - extremes_chart_km: {ext_chart_km}")
 
     if boundaries_path:
         boundaries = gpd.read_file(boundaries_path)
         provinces = gpd.read_file(provinces_path) if provinces_path and Path(provinces_path).exists() else None
         maps = render_travel_time_maps(
+            mun_main,
+            boundaries,
+            destinations,
+            output_dir,
+            provinces_gdf=provinces,
+            nis_col=boundaries_nis_col,
+            prefix=prefix,
+        )
+        dist_map = render_distance_maps(
             mun_main,
             boundaries,
             destinations,
@@ -165,6 +190,7 @@ def _generate_all_outputs(
             nis_col=boundaries_nis_col,
         )
         print(f"  - dual_map: {maps['dual_map']}")
+        print(f"  - distance_map_km: {dist_map}")
         print(f"  - catchment_map: {maps['catchment_map']}")
         print(f"  - interactive_html: {html_path}")
 

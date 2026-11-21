@@ -9,11 +9,13 @@ Reproduceerbare lokale analyse van de **autorijtijd vanaf vermoedelijke woonadre
 - **Geselecteerde vermoedelijke woonadressen:** `2.974.685` (`2.263.537` unieke vertrekpunten, **100,00%** routedekking)
 - **Mediaan autorijtijd:** **22,8 min** (gemiddelde **30,3 min**, P90 **65,2 min**)
 - **Aandeel binnen 15 / 30 / 45 min:** **23,3%** / **64,6%** / **78,1%**
-- **Mediaan rijafstand:** **21,6 km** (gemiddelde **34,6 km**)
-- **Sterk oost–west contrast:** in **Antwerpen** (98,5%), **Vlaams-Brabant** (96,6%) en **Limburg** (90,2%) bereikt vrijwel iedereen binnen 30 minuten een natuurbegraafplaats; in **Oost-Vlaanderen** is dat 42,9% en in **West-Vlaanderen** **0,0%** (mediaan 65,0 min).
+- **Mediaan rijafstand:** **21,6 km** (gemiddelde **34,6 km**, P90 **87,8 km**; binnen 10 / 20 / 30 / 50 km: **18,9%** / **46,2%** / **64,3%** / **77,0%**)
+- **Sterk oost–west contrast:** in **Antwerpen** (98,5% ≤ 30 min; 96,6% ≤ 30 km), **Vlaams-Brabant** (96,6%; 95,3%) en **Limburg** (90,2%; 89,4%) bereikt vrijwel iedereen vlot een natuurbegraafplaats; in **Oost-Vlaanderen** is dat 42,9% ≤ 30 min (45,5% ≤ 30 km) en in **West-Vlaanderen** **0,0% ≤ 30 min én 0,0% ≤ 50 km** (mediaan 65,0 min / 87,6 km).
 - **Verzorgingsbereik:** twee locaties — *Muilemlaan (Ternat)* (32,1%) en *Hellebos (Stekene)* (12,5%) — zijn samen de snelste optie voor **44,6%** van alle Vlaamse woonadressen.
 
 ![Gemeentekaart mediaan en P90 autorijtijd](outputs/full_kaart_mediaan_en_p90.png)
+
+![Gemeentekaart mediaan en P90 rijafstand in km](outputs/full_kaart_afstand_mediaan_en_p90_km.png)
 
 ![Cumulatieve bereikbaarheid per provincie](outputs/full_grafiek_cumulatieve_bereikbaarheid.png)
 

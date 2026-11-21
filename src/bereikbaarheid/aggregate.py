@@ -63,6 +63,11 @@ def _aggregate_group(df: pd.DataFrame, weight_col: str) -> dict:
             "pct_within_45_min": float("nan"),
             "mean_distance_km": float("nan"),
             "median_distance_km": float("nan"),
+            "p90_distance_km": float("nan"),
+            "pct_within_10_km": float("nan"),
+            "pct_within_20_km": float("nan"),
+            "pct_within_30_km": float("nan"),
+            "pct_within_50_km": float("nan"),
             "top_destination_id": None,
             "top_destination_share_pct": float("nan"),
         }
@@ -73,16 +78,20 @@ def _aggregate_group(df: pd.DataFrame, weight_col: str) -> dict:
     dist_km = ok["distance_m"].to_numpy(dtype=np.float64) / 1000.0
 
     valid_dist = np.isfinite(dist_km)
-    mean_dist = (
-        float(np.average(dist_km[valid_dist], weights=w[valid_dist]))
-        if np.any(valid_dist)
-        else float("nan")
-    )
-    median_dist = (
-        weighted_quantile(dist_km[valid_dist], w[valid_dist], 0.50)
-        if np.any(valid_dist)
-        else float("nan")
-    )
+    if np.any(valid_dist):
+        w_d = w[valid_dist]
+        d_ok = dist_km[valid_dist]
+        tot_wd = float(np.sum(w_d))
+        mean_dist = float(np.average(d_ok, weights=w_d))
+        median_dist = weighted_quantile(d_ok, w_d, 0.50)
+        p90_dist = weighted_quantile(d_ok, w_d, 0.90)
+        pct_10_km = 100.0 * float(np.sum(w_d[d_ok <= 10.0])) / tot_wd
+        pct_20_km = 100.0 * float(np.sum(w_d[d_ok <= 20.0])) / tot_wd
+        pct_30_km = 100.0 * float(np.sum(w_d[d_ok <= 30.0])) / tot_wd
+        pct_50_km = 100.0 * float(np.sum(w_d[d_ok <= 50.0])) / tot_wd
+    else:
+        mean_dist = median_dist = p90_dist = float("nan")
+        pct_10_km = pct_20_km = pct_30_km = pct_50_km = float("nan")
 
     top_dest_id: str | None = None
     top_dest_share = float("nan")
@@ -107,6 +116,11 @@ def _aggregate_group(df: pd.DataFrame, weight_col: str) -> dict:
         "pct_within_45_min": 100.0 * float(np.sum(w[dur_min <= 45.0])) / n_valid,
         "mean_distance_km": mean_dist,
         "median_distance_km": median_dist,
+        "p90_distance_km": p90_dist,
+        "pct_within_10_km": pct_10_km,
+        "pct_within_20_km": pct_20_km,
+        "pct_within_30_km": pct_30_km,
+        "pct_within_50_km": pct_50_km,
         "top_destination_id": top_dest_id,
         "top_destination_share_pct": top_dest_share,
     }
