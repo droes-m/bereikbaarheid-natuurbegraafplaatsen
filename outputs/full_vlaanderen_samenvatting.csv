@@ -1,0 +1,2 @@
+scope,variant,n_selected,n_valid_route,n_no_route,n_api_error,routing_coverage_pct,mean_duration_min,median_duration_min,p90_duration_min,pct_within_15_min,pct_within_30_min,pct_within_45_min,mean_distance_km,median_distance_km,top_destination_id,top_destination_share_pct,top_destination_name
+Vlaams Gewest,main,2974685,2974685,0,0,100.0,30.255406009375786,22.795,65.18166666666667,23.256042236404863,64.57386244257795,78.07535923971781,34.64073582984417,21.5708,6733,32.13815916643275,Natuurbegraafplek Muilemlaan (Ternat)

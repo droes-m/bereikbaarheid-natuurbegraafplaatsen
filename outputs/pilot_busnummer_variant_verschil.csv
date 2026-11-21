@@ -1,0 +1,2 @@
+n_selected_main,n_selected_no_bus_variant,n_addresses_changed,mean_duration_diff_min,p90_duration_diff_min,pct_within_30_min_diff
+10000,9505,495,0.16903484718569217,0.19333333333332803,-0.5646081009994646

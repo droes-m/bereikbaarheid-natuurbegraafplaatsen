@@ -1,0 +1,31 @@
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Large data & OSRM artifacts (reproducible via scripts)
+data/raw/*.zip
+data/raw/*.tif
+data/raw/*.tiff
+data/raw/*.gpkg
+data/raw/*.shp
+data/raw/*.dbf
+data/raw/*.shx
+data/raw/*.prj
+data/raw/*.cpg
+data/raw/*.pbf
+data/raw/*.parquet
+data/raw/landgebruik_2025/
+data/raw/adressenregister/
+data/raw/vrbg2025_*.geojson
+data/interim/
+data/osrm/
+data/processed/*.parquet
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
